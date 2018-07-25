@@ -219,42 +219,42 @@ app.delete("/api/song/:id", (req, res) => {
     .catch(error => res.json({ error: error.message }));
 });
 
-app.delete("/api/artists/:id", (req, res) => {
-  const { id } = req.params;
-  db.any(
-    `
-    SELECT song.id
-    FROM song, artist
-    WHERE artist.id = $1
-  `,
-    [id]
-  )
-    .then(data =>
-      data.map(song => {
-        db.any(
-          `
-        DELETE song_playlist
-        FROM song_playlist
-        WHERE song_playlist.song_id = $1
-      `,
-          [song.id]
-        ).then(data =>
-          db
-            .any(
-              `
-        DELETE song
-        FROM song, artist
-        WHERE artist.id = $1
-        `,
-              [id]
-            )
-            .then(data => res.json({ data: "woohoo" }))
-            .catch(error => res.json({ error: error.message }))
-        );
-      })
-    )
-    .catch(error => res.json({ error: error.message }));
-});
+// app.delete("/api/artists/:id", (req, res) => {
+//   const { id } = req.params;
+//   db.any(
+//     `
+//     SELECT song.id
+//     FROM song, artist
+//     WHERE artist.id = $1
+//   `,
+//     [id]
+//   )
+//     .then(data =>
+//       data.map(song => {
+//         db.any(
+//           `
+//         DELETE song_playlist
+//         FROM song_playlist
+//         WHERE song_playlist.song_id = $1
+//       `,
+//           [song.id]
+//         ).then(data =>
+//           db
+//             .any(
+//               `
+//         DELETE song
+//         FROM song, artist
+//         WHERE artist.id = $1
+//         `,
+//               [id]
+//             )
+//             .then(data => res.json({ data: "woohoo" }))
+//             .catch(error => res.json({ error: error.message }))
+//         );
+//       })
+//     )
+//     .catch(error => res.json({ error: error.message }));
+// });
 
 app.get("*", (req, res) => {
   res.send("caio, come sta, cazzo voi");
