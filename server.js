@@ -271,6 +271,45 @@ app.delete("/api/artists/:id", (req, res) => {
     .catch(error => res.json({ error: error.message }));
 });
 
+const QUERY_TO_DELETE_AND_RECREATE_EVERYTHING = `
+DROP TABLE song_playlist;
+DROP TABLE song;
+DROP TABLE artist;
+DROP TABLE playlist;
+
+CREATE TABLE artist (
+    id serial,
+    name varchar(50) NOT NULL,
+    email varchar(50) NOT NULL UNIQUE,
+    PRIMARY KEY (id)
+);
+CREATE TABLE song (
+    id SERIAL,
+    artist_id INT,
+    title VARCHAR(50) NOT NULL,
+    year SMALLINT NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (artist_id) REFERENCES artist (id)
+);
+INSERT INTO artist VALUES (1, 'The Doors', 'jim@thedoors.com');
+INSERT INTO artist VALUES (2, 'The Kinks', 'ray@thekinks.com');
+ALTER SEQUENCE artist_id_seq RESTART WITH 3 INCREMENT BY 1;
+
+INSERT INTO song VALUES (1, 1, 'Riders On The Storm', 1971);
+INSERT INTO song VALUES (2, 1, 'Light My Fire', 1967);
+INSERT INTO song VALUES (3, 1, 'Break On Through', 1967);
+INSERT INTO song VALUES (4, 2, 'Lola', 1970);
+INSERT INTO song VALUES (5, 2, 'Waterloo Sunset', 1967);
+INSERT INTO song VALUES (6, 2, 'Sunny Afternoon', 1966);
+ALTER SEQUENCE song_id_seq RESTART WITH 7 INCREMENT BY 1;
+`;
+
+app.get("/api/WARNGIN", (req, res) => {
+  db.none(QUERY_TO_DELETE_AND_RECREATE_EVERYTHING)
+    .then(() => res.json({ message: "WHOO, you droped and recreted" }))
+    .catch(error => res.json({ error: error.message }));
+});
+
 app.get("*", (req, res) => {
   res.send("caio, come sta, cazzo voi");
 });
