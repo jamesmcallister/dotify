@@ -143,7 +143,7 @@ app.post("/api/playlists/:playlistId/songs", (req, res) => {
     .catch(error => res.json({ error: error.message }));
 });
 
-app.patch("/api/artists/:id", (req, res) => {
+app.patch("selectArtists", (req, res) => {
   const { name, email } = req.body;
   const { id } = req.params;
   db.one(
@@ -210,6 +210,7 @@ app.delete("/api/song/:id", (req, res) => {
     `
     DELETE FROM song_playlist 
     WHERE song_id = $1;
+
     DELETE FROM song
     WHERE id = $1
   `,
@@ -219,42 +220,56 @@ app.delete("/api/song/:id", (req, res) => {
     .catch(error => res.json({ error: error.message }));
 });
 
+// // working
 // app.delete("/api/artists/:id", (req, res) => {
 //   const { id } = req.params;
-//   db.any(
+//   db.none(
 //     `
-//     SELECT song.id
-//     FROM song, artist
-//     WHERE artist.id = $1
+//     DELETE FROM song_playlist USING song
+//     WHERE song.id = song_playlist.song_id
+//     AND song.artist_id = $1;
+
+//     DELETE FROM song
+//     WHERE song.artist_id = $1;
+
+//     DELETE FROM artist
+//     WHERE artist.id = $1;
 //   `,
 //     [id]
 //   )
-//     .then(data =>
-//       data.map(song => {
-//         db.any(
-//           `
-//         DELETE song_playlist
-//         FROM song_playlist
-//         WHERE song_playlist.song_id = $1
-//       `,
-//           [song.id]
-//         ).then(data =>
-//           db
-//             .any(
-//               `
-//         DELETE song
-//         FROM song, artist
-//         WHERE artist.id = $1
-//         `,
-//               [id]
-//             )
-//             .then(data => res.json({ data: "woohoo" }))
-//             .catch(error => res.json({ error: error.message }))
-//         );
-//       })
-//     )
+//     .then(() => res.json({ message: "cazzo, iho cancellato" }))
+
 //     .catch(error => res.json({ error: error.message }));
 // });
+
+// new transations
+app.delete("/api/artists/:id", (req, res) => {
+  const { id } = req.params;
+  db.tx(t => {
+    const step1 = t.none(
+      `DELETE FROM song_playlist USING song 
+      WHERE song.id = song_playlist.song_id
+      AND song.artist_id = $1`,
+      [id]
+    );
+
+    const step2 = t.none(
+      `DELETE FROM song
+      WHERE song.artist_id = $2`,
+      [id]
+    );
+
+    const step3 = t.none(
+      `DELETE FROM artist
+      WHERE artist.id = $1`,
+      [id]
+    );
+    return t.batch([step1, step2, step3]);
+  })
+    .then(() => res.json({ message: "cazzo, iho cancellato" }))
+
+    .catch(error => res.json({ error: error.message }));
+});
 
 app.get("*", (req, res) => {
   res.send("caio, come sta, cazzo voi");
